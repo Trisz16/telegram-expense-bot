@@ -1,11 +1,8 @@
 import sqlite3
-import sys
-from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import db  # noqa: E402
+import db
 
 
 @pytest.fixture
@@ -53,3 +50,37 @@ def test_tipe_atau_jumlah_tidak_valid_ditolak(db_path):
         db.tambah_transaksi(1, "transfer", 1000, "", db_path)
     with pytest.raises(sqlite3.IntegrityError):
         db.tambah_transaksi(1, "keluar", 0, "", db_path)
+
+
+def test_total_periode_memfilter_rentang_dan_user(db_path):
+    db.tambah_transaksi(1, "masuk", 50000, "saku", db_path, created_at="2026-11-18T10:00:00")
+    db.tambah_transaksi(1, "keluar", 15000, "makan", db_path, created_at="2026-11-18T12:00:00")
+    db.tambah_transaksi(1, "keluar", 7000, "kemarin", db_path, created_at="2026-11-17T23:59:59")
+    db.tambah_transaksi(2, "keluar", 9999, "orang lain", db_path, created_at="2026-11-18T09:00:00")
+
+    masuk, keluar = db.total_periode(1, "2026-11-18T00:00:00", "2026-11-19T00:00:00", db_path)
+
+    assert (masuk, keluar) == (50000, 15000)
+
+
+def test_total_periode_batas_akhir_eksklusif(db_path):
+    db.tambah_transaksi(1, "keluar", 1000, "x", db_path, created_at="2026-11-19T00:00:00")
+
+    assert db.total_periode(1, "2026-11-18T00:00:00", "2026-11-19T00:00:00", db_path) == (0, 0)
+
+
+def test_saldo(db_path):
+    db.tambah_transaksi(1, "masuk", 50000, "saku", db_path)
+    db.tambah_transaksi(1, "keluar", 15000, "makan", db_path)
+
+    assert db.saldo(1, db_path) == 35000
+    assert db.saldo(404, db_path) == 0
+
+
+def test_total_per_keterangan_gabung_huruf_besar_kecil(db_path):
+    db.tambah_transaksi(1, "keluar", 15000, "Makan", db_path)
+    db.tambah_transaksi(1, "keluar", 10000, "makan", db_path)
+    db.tambah_transaksi(1, "keluar", 30000, "bensin", db_path)
+    db.tambah_transaksi(1, "masuk", 99999, "saku", db_path)  # bukan pengeluaran
+
+    assert db.total_per_keterangan(1, db_path=db_path) == [("bensin", 30000), ("makan", 25000)]
