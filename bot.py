@@ -1,3 +1,4 @@
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -9,6 +10,14 @@ import rekap
 from parsing import ParseError, parse_transaksi
 
 load_dotenv()
+
+logging.basicConfig(
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    level=logging.INFO,
+)
+# httpx mencatat URL request di level INFO, dan URL Telegram memuat token bot.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logger = logging.getLogger(__name__)
 
 HELP_TEXT = (
     "Cara mencatat (kirim sebagai pesan biasa):\n"
@@ -82,6 +91,15 @@ async def kategori(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(rekap.format_kategori(data))
 
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Tangkap error yang lolos dari handler: catat ke log, beri pesan ramah."""
+    logger.error("Error saat memproses update", exc_info=context.error)
+    if isinstance(update, Update) and update.effective_message:
+        await update.effective_message.reply_text(
+            "Maaf, terjadi kesalahan di sisi bot. Coba lagi sebentar lagi."
+        )
+
+
 def main() -> None:
     token = os.getenv("BOT_TOKEN")
     if not token:
@@ -96,6 +114,8 @@ def main() -> None:
     app.add_handler(CommandHandler("saldo", saldo))
     app.add_handler(CommandHandler("kategori", kategori))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, catat))
+    app.add_error_handler(error_handler)
+    logger.info("Bot berjalan. Tekan Ctrl+C untuk berhenti.")
     app.run_polling()
 
 
