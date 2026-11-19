@@ -29,8 +29,8 @@ Python 3.15, [python-telegram-bot](https://python-telegram-bot.org/) (async), SQ
 2. Siapkan environment:
 
    ```powershell
-   git clone <url-repo-ini>
-   cd <nama-folder>
+   git clone https://github.com/Trisz16/telegram-expense-bot.git
+   cd telegram-expense-bot
    py -3.15 -m venv .venv
    .\.venv\Scripts\Activate.ps1
    pip install -r requirements.txt

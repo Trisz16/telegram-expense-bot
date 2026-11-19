@@ -12,6 +12,6 @@ Yang saya pelajari:
 
 Stack: Python, python-telegram-bot (async), SQLite, pytest.
 
-Kode lengkap dan cara menjalankannya ada di sini: <GANTI_DENGAN_TAUTAN_REPO>
+Kode lengkap dan cara menjalankannya ada di sini: https://github.com/Trisz16/telegram-expense-bot
 
 #Python #Telegram #SQLite #Pytest #BackendDevelopment
